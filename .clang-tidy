@@ -6,6 +6,8 @@ HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle: none
 CheckOptions:
-    readability-uppercase-literal-suffix.NewSuffixes: 'L;LL;LU;LLU'
-    misc-const-correctness.AnalyzeValues: false
+    - key: readability-uppercase-literal-suffix.NewSuffixes
+      value: 'L;LL;LU;LLU'
+    - key: misc-const-correctness.AnalyzeValues
+      value: false
 ...

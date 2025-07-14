@@ -1,0 +1,84 @@
+import React from "react";
+import { useContext, useRef, useState } from "react";
+import { Button, ListGroup, Overlay, Popover } from "react-bootstrap";
+import { Translate, Sun, MoonStars, Github } from "react-bootstrap-icons";
+
+import configuration from "./configuration";
+import { LanguageContext, useTranslation } from "./language";
+
+interface NavRightProps {
+    theme: number;
+    onSetTheme: (lang: string, theme: number) => void;
+}
+
+const NavRight = ({ theme, onSetTheme }: NavRightProps) => {
+    const [show, setShow] = useState(false);
+    const target = useRef(null);
+    const language = useContext(LanguageContext);
+    const translation = useTranslation();
+    return (
+        <>
+            <Button
+                variant="secondary"
+                ref={target}
+                className="round-button"
+                onClick={() => setShow(!show)}
+            >
+                <Translate size={24} />
+            </Button>
+            <Overlay
+                target={target.current}
+                show={show}
+                placement="bottom-start"
+                rootClose={true}
+                rootCloseEvent="click"
+                onHide={() => setShow(false)}
+            >
+                <Popover>
+                    <ListGroup>
+                        {configuration.languages.map((item) => (
+                            <ListGroup.Item
+                                key={item.key}
+                                active={language === item.key}
+                                action
+                                onClick={() => {
+                                    setShow(false);
+                                    onSetTheme(item.key, theme);
+                                }}
+                            >
+                                {item.name}
+                            </ListGroup.Item>
+                        ))}
+                    </ListGroup>
+                </Popover>
+            </Overlay>
+            <Button
+                variant="secondary"
+                className="round-button"
+                onClick={() => onSetTheme(language, theme ? 0 : 1)}
+                title={translation(
+                    `Toggle to ${theme ? "Light" : "Dark"} mode`
+                )}
+            >
+                <MoonStars
+                    size={24}
+                    style={{ display: theme ? "none" : "inline" }}
+                />
+                <Sun size={24} style={{ display: theme ? "inline" : "none" }} />
+            </Button>
+            <Button
+                as="a"
+                variant="secondary"
+                href="https://github.com/genrwoody/oni_world_app"
+                target="_blank"
+                title={translation("Open on GitHub")}
+                className="round-button"
+            >
+                <Github size={24} />
+            </Button>
+            <span>v1.0.6</span>
+        </>
+    );
+};
+
+export default NavRight;

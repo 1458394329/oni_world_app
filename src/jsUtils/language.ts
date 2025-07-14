@@ -10,17 +10,23 @@ const languages: Languages = {
         "Worldgen Seed": "世界种子",
         Reroll: "刷新",
         Copy: "复制",
-        Light: "浅色",
-        Dark: "暗黑",
+        "Toggle to Light mode": "切换到浅色模式",
+        "Toggle to Dark mode": "切换到暗黑模式",
         "Open on GitHub": "在GitHub上查看源码",
+        Settings: "设置",
+        Submit: "提交",
         "Scramble DLCs": "DLC混搭",
         Disable: "禁用",
         Enable: "启用",
         Likely: "可能",
         Guaranteed: "确保",
+        "Game Mode": "游戏模式",
         "Base Game": "本体",
         Classic: "经典",
         "Spaced Out!": "眼冒金星",
+        Asteroid: "小行星",
+        "Planetoid Cluster": "小行星星群",
+        "Moonlet Cluster": "卫星星群",
         Terra: "类地星体",
         Oceania: "海洋星体",
         Rime: "冰霜星体",
@@ -145,3 +151,5 @@ export const useTranslation = () => {
         return key;
     };
 };
+
+export default useTranslation;

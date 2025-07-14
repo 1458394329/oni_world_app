@@ -34,6 +34,7 @@ declare const Module: {
     wasm: Uint8Array | null;
     data: Uint8Array | null;
     worlds: Array<World>;
+    sprite: Array<ImageBitmap>;
     HEAP32: Int32Array;
     HEAPU8: Uint8Array;
     updateWorld(type: number, count: number, data: number): void;

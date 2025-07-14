@@ -1,4 +1,4 @@
-import { configuration } from "./configuration";
+import configuration from "./configuration";
 
 const enum ResultType {
     RT_Starting,
@@ -9,7 +9,7 @@ const enum ResultType {
     RT_Resource,
 }
 
-Module.updateWorld = (type: number, count: number, data: number) => {
+export const updateWorld = (type: number, count: number, data: number) => {
     let offset = data >> 2;
     switch (type) {
         case ResultType.RT_Starting: {
@@ -85,6 +85,3 @@ Module.updateWorld = (type: number, count: number, data: number) => {
             console.log("wrong type: " + type);
     }
 };
-
-export { configuration } from "./configuration";
-export { LanguageContext, useTranslation } from "./language";
