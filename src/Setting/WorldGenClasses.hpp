@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SampleDescriber.hpp"
+#include "DefaultSettings.hpp"
 
 struct Feature {
     std::string type;
@@ -198,3 +198,8 @@ struct DlcMixingSetting {
     std::vector<LoreCollectionOverride> globalLoreUnlocks;
 };
 
+struct ModifyLayoutTagsRule {
+    std::vector<std::string> addTags;
+    std::vector<std::string> removeTags;
+    std::vector<AllowedCellsFilter> allowedCellsFilter;
+};

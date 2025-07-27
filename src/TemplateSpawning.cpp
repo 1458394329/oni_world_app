@@ -532,6 +532,19 @@ void TemplateSpawning::DrawWorldBorder()
     }
     m_poiBounds.emplace_back(0.0f, 0.0f, mapWidth, border1 + 1.0f);
     m_poiBounds.emplace_back(0.0f, border2, mapWidth, mapHeight - border2);
+    for (auto &rule : m_world.modifyLayoutTags) {
+        for (auto &site : m_sites) {
+            if (!DoesCellMatchFilters(*site, rule.allowedCellsFilter)) {
+                continue;
+            }
+            for (auto &tag : rule.addTags) {
+                site->tags.emplace(tag);
+            }
+            for (auto &tag : rule.removeTags) {
+                site->tags.erase(tag);
+            }
+        }
+    }
 }
 
 bool WorldGen::DetermineTemplates(std::vector<Site *> &sites, KRandom &random)

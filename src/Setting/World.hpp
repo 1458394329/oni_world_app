@@ -88,6 +88,7 @@ struct World {
     std::vector<WeightedSubworldName> subworldFiles;
     std::vector<AllowedCellsFilter> unknownCellsAllowedSubworlds;
     std::vector<SubworldMixingRule> subworldMixingRules;
+    std::vector<ModifyLayoutTagsRule> modifyLayoutTags;
     std::string startSubworldName;
     std::string startingBaseTemplate;
     MinMax startingBasePositionHorizontal = {0.5f, 0.5f};
