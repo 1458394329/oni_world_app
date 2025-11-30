@@ -42,7 +42,7 @@ public:
     std::map<std::string, ClusterLayout> clusters;
     std::map<std::string, FeatureSettings> features;
     // std::map<std::string, NoiseTree> noise;
-    std::map<std::string, WorldTrait> storytraits;
+    // std::map<std::string, WorldTrait> storytraits;
     std::map<std::string, SubworldMixingSettings> subworldMixing;
     std::map<std::string, SubWorld> subworlds;
     std::map<std::string, std::vector<SubWorld *>> orderedSubworlds;

@@ -169,8 +169,8 @@ bool SettingsCache::LoadSettingsCache(const std::string_view &content)
             continue;
         }
         if (strstr(stat.m_filename, "worldgen/storytraits/") != nullptr) {
-            std::string key = GenerateKey(stat.m_filename);
-            LoadJsonFile(zip, i, storytraits[key]);
+            // std::string key = GenerateKey(stat.m_filename);
+            // LoadJsonFile(zip, i, storytraits[key]);
             continue;
         }
         if (strstr(stat.m_filename, "worldgen/subworldMixing/") != nullptr) {
