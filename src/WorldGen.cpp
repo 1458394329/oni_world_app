@@ -98,13 +98,7 @@ static inline void SwitchNodes(Site &lhs, Site &rhs)
     std::swap(lhs.idx, rhs.idx);
     std::swap(lhs.x, rhs.x);
     std::swap(lhs.y, rhs.y);
-    std::vector<Vector2f> vertices;
-    vertices.swap(lhs.polygon.Vertices);
-    lhs.polygon.Clear();
-    vertices.swap(lhs.polygon.Vertices);
-    vertices.swap(rhs.polygon.Vertices);
-    rhs.polygon.Clear();
-    vertices.swap(rhs.polygon.Vertices);
+    lhs.polygon.Swap(rhs.polygon);
 }
 
 static void ApplySwapTags(std::vector<Site> &sites, KRandom &random)

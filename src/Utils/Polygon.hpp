@@ -73,6 +73,7 @@ public:
         m_centroid.reset();
         m_bounds.reset();
     }
+    void Swap(Polygon &other);
     float Area() const;
     const Vector2f &Centroid() const;
     const Rect &Bounds() const;

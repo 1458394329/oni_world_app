@@ -7,6 +7,14 @@
 
 #include "Setting/SettingsCache.hpp"
 
+void Polygon::Swap(Polygon &other)
+{
+    Vertices.swap(other.Vertices);
+    m_area.swap(other.m_area);
+    m_centroid.swap(other.m_centroid);
+    m_bounds.swap(other.m_bounds);
+}
+
 const Rect &Polygon::Bounds() const
 {
     if (!m_bounds.has_value()) {
