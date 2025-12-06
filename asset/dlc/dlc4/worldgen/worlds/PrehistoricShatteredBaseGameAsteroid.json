@@ -29,7 +29,7 @@
       "forbiddenTraits": [
         "traits/MisalignedStart",
         "traits/GeoActive",
-        "traits/GeoDormant",
+        "traits/Geodormant",
         "traits/Volcanoes"
       ]
     },

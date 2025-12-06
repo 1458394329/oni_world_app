@@ -32,7 +32,7 @@
         "traits/MisalignedStart",
         "expansion1::traits/CrashedSatellites",
         "traits/GeoActive",
-        "traits/GeoDormant",
+        "traits/Geodormant",
         "expansion1::traits/Volcanoes"
       ]
     },
