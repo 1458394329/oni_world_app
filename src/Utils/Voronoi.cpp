@@ -489,8 +489,8 @@ void Voronoi::BuildRegion(Site &site)
         area += vec1.x * vec2.y - vec2.x * vec1.y;
     }
     if (area < 0.0f) {
-        for (size_t i = 0, j = list.size() - 1; i < j; ++i, --j) {
-            std::swap(list[i], list[j]);
+        for (size_t i = 0, k = list.size() - 1; i < k; ++i, --k) {
+            std::swap(list[i], list[k]);
         }
     }
 }

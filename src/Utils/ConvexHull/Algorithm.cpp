@@ -338,7 +338,7 @@ std::vector<int> ConvexHullAlgorithm::FindInitialPoints()
     int index = 1;
     while (index < NumOfDimensions && !extremes.empty()) {
         int bestVertex = -1;
-        std::array<double, MaxDimension> bestEdgeVector;
+        std::array<double, MaxDimension> bestEdgeVector{};
         double maxVolume = DefaultPlaneDistanceTolerance;
         for (int i = extremes.size() - 1; i >= 0; i--) {
             // count backwards in order to remove potential duplicates
@@ -377,7 +377,7 @@ std::vector<int> ConvexHullAlgorithm::FindInitialPoints()
         std::iota(allVertices.begin(), allVertices.end(), 0);
         while (index < NumOfDimensions && !allVertices.empty()) {
             int bestVertex = -1;
-            std::array<double, MaxDimension> bestEdgeVector;
+            std::array<double, MaxDimension> bestEdgeVector{};
             double maxVolume = 0.0;
             for (int i = allVertices.size() - 1; i >= 0; i--) {
                 // count backwards in order to remove potential duplicates

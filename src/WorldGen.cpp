@@ -664,9 +664,9 @@ std::vector<Vector3i> WorldGen::GetGeysers(int globalWorldSeed)
                 if (item.id.find("GeyserGeneric_") == item.id.npos) {
                     continue;
                 }
-                std::string name = item.id.substr(14);
+                std::string geyser = item.id.substr(14);
                 for (int index = 0; index < (int)std::size(configs); ++index) {
-                    if (name == configs[index]) {
+                    if (geyser == configs[index]) {
                         pos.x += item.location_x;
                         pos.y += item.location_y;
                         result.emplace_back(pos.x, pos.y, index);

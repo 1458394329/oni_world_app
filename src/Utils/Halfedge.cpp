@@ -153,25 +153,25 @@ bool Halfedge::Intersect(const Halfedge &halfedge1, Vector2f &result) const
 {
     auto &halfedge0 = *this;
 
-    auto edge = halfedge0.edge;
+    auto edge1 = halfedge0.edge;
     auto edge2 = halfedge1.edge;
-    if (edge == nullptr || edge2 == nullptr) {
+    if (edge1 == nullptr || edge2 == nullptr) {
         return false;
     }
-    if (edge->rightSite == edge2->rightSite) {
+    if (edge1->rightSite == edge2->rightSite) {
         return false;
     }
-    float num = (double)edge->a * edge2->b - (double)edge->b * edge2->a;
+    float num = (double)edge1->a * edge2->b - (double)edge1->b * edge2->a;
     if (-1E-10f < num && num < 1E-10f) {
         return false;
     }
-    float x = ((double)edge->c * edge2->b - (double)edge2->c * edge->b) / num;
-    float y = ((double)edge2->c * edge->a - (double)edge->c * edge2->a) / num;
+    float x = ((double)edge1->c * edge2->b - (double)edge2->c * edge1->b) / num;
+    float y = ((double)edge2->c * edge1->a - (double)edge1->c * edge2->a) / num;
     auto halfedge2 = &halfedge1;
     auto edge3 = edge2;
-    if ((*edge->rightSite) < (*edge2->rightSite)) {
+    if ((*edge1->rightSite) < (*edge2->rightSite)) {
         halfedge2 = &halfedge0;
-        edge3 = edge;
+        edge3 = edge1;
     }
     bool flag = x >= edge3->rightSite->x;
     if ((flag && halfedge2->leftRight == Side::LEFT) ||

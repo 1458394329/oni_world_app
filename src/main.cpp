@@ -49,9 +49,9 @@ void WriteToBinary(const std::vector<Site> &sites)
                 data.push_back(child.idx);
                 data.push_back(*(uint32_t *)&child.x);
                 data.push_back(*(uint32_t *)&child.y);
-                int count = (int)child.polygon.Vertices.size();
-                if (count != 0) {
-                    data.push_back(count);
+                int count2 = (int)child.polygon.Vertices.size();
+                if (count2 != 0) {
+                    data.push_back(count2);
                     for (auto &point : child.polygon.Vertices) {
                         data.push_back(*(uint32_t *)&point.x);
                         data.push_back(*(uint32_t *)&point.y);

@@ -116,9 +116,9 @@ void World::ApplayMixings(std::vector<MixingConfig *> &mixings)
         for (auto filter : unknownCellsAllowedSubworlds2) {
             auto filter2 = const_cast<AllowedCellsFilter *>(filter);
             filter2->Backup();
-            for (auto &name : filter2->subworldNames) {
-                if (name == rule.name) {
-                    name = subworld.name;
+            for (auto &subname : filter2->subworldNames) {
+                if (subname == rule.name) {
+                    subname = subworld.name;
                 }
             }
         }
@@ -165,10 +165,10 @@ void World::ApplayTraits(const WorldTrait &trait, const SettingsCache &settings)
             globalFeatures2.emplace_back(feature);
         }
     }
-    for (auto &name : trait.removeWorldTemplateRulesById) {
+    for (auto &ruleId : trait.removeWorldTemplateRulesById) {
         auto remove = std::ranges::remove_if(
-            worldTemplateRules2, [&name](const TemplateSpawnRules *rule) {
-                return rule->ruleId == name;
+            worldTemplateRules2, [&ruleId](const TemplateSpawnRules *rule) {
+                return rule->ruleId == ruleId;
             });
         worldTemplateRules2.erase(remove.begin(), remove.end());
     }

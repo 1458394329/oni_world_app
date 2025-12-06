@@ -257,12 +257,12 @@ bool TemplateSpawning::RemoveOverlappingPOI(
         if (temperatureRange1 == temperatureRange2) {
             continue;
         }
-        auto itr = m_settings.temperatures.find(temperatureRange2);
-        if (itr == m_settings.temperatures.end()) {
+        auto itr2 = m_settings.temperatures.find(temperatureRange2);
+        if (itr2 == m_settings.temperatures.end()) {
             LogE("can not find range: %d.", (int)temperatureRange2);
             return true;
         }
-        auto &temperature2 = itr->second;
+        auto &temperature2 = itr2->second;
         float min = std::min(temperature1.min, temperature2.min);
         float max = std::max(temperature1.max, temperature2.max);
         bool flag = templateBounds.Overlaps(item->polygon.Bounds());
@@ -310,11 +310,11 @@ Site *TemplateSpawning::FindTargetForTemplate(const TemplateContainer &templt,
                     filtered.push_back(site);
             }
         }
-        auto itr = std::ranges::remove_if(
+        auto itr2 = std::ranges::remove_if(
             filtered, [this, &templt, &rule](const Site *site) {
                 return RemoveOverlappingPOI(site, templt, rule);
             });
-        filtered.erase(itr.begin(), itr.end());
+        filtered.erase(itr2.begin(), itr2.end());
     }
     if (filtered.empty()) {
         return nullptr;
@@ -396,15 +396,15 @@ bool TemplateSpawning::ApplyTemplateRules(const TemplateSpawnRules &rule,
         Site *site = nullptr;
         if (rule.overridePlacement.x != -1.0f) {
             position = rule.overridePlacement;
-            auto itr = std::find_if(m_sites.begin(), m_sites.end(),
+            auto itr2 = std::find_if(m_sites.begin(), m_sites.end(),
                                     [&position](Site *site) {
                                         return site->polygon.Contains(position);
                                     });
-            if (itr == m_sites.end()) {
+            if (itr2 == m_sites.end()) {
                 LogE("override placement is wrong, rule: %s.", name.c_str());
                 return false;
             }
-            site = *itr;
+            site = *itr2;
             if (guarantee && site->templateTag != "Invalid") {
                 LogE("the site is already used.");
                 return false;

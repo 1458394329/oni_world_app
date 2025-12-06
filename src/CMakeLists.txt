@@ -87,7 +87,7 @@ list(APPEND WASM_LINK_DEPENDS
 set_target_properties(oniWorldApp PROPERTIES LINK_DEPENDS "${WASM_LINK_DEPENDS}")
 elseif(MSVC)
 target_compile_options(oniWorldApp
-    PUBLIC "/source-charset:utf-8" "/execution-charset:GBK")
+    PUBLIC "/source-charset:utf-8" "/execution-charset:GBK" /MP /W4 /WX /wd4244)
 endif()
 target_include_directories(oniWorldApp
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"

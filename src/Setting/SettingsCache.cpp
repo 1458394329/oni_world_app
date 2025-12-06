@@ -434,7 +434,7 @@ SettingsCache::GetRandomTraits(const World &world) const
     return result;
 }
 
-void SettingsCache::DoSubworldMixing(std::vector<World *> worlds)
+void SettingsCache::DoSubworldMixing(std::vector<World *> asteroids)
 {
     std::vector<MixingConfig *> filtered;
     for (auto &config : mixConfigs) {
@@ -459,13 +459,13 @@ void SettingsCache::DoSubworldMixing(std::vector<World *> worlds)
         }
     }
     KRandom random(seed);
-    ShuffleSeeded(worlds, random);
+    ShuffleSeeded(asteroids, random);
     ArraySortHelper::Sort(
-        worlds, 0, (int)worlds.size(), [](World *a, World *b) {
+        asteroids, 0, (int)asteroids.size(), [](World *a, World *b) {
             const int dict[] = {3, 1, 2};
             return dict[(int)a->locationType] < dict[(int)b->locationType];
         });
-    for (auto world : worlds) {
+    for (auto world : asteroids) {
         ShuffleSeeded(filtered, random);
         world->ClearMixingsAndTraits();
         world->ApplayMixings(filtered);
