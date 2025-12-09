@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 #include "ClusterLayout.hpp"
 #include "TemplateContainer.hpp"
 
@@ -60,6 +62,7 @@ public:
     int seed = 0;
 
 private:
+    static Variant m_nil;
     int m_dlcState = 0;
 
 public:
@@ -74,7 +77,6 @@ public:
     template<typename T>
     const T &GetDefaultData(const World &world, const std::string &key) const
     {
-        static Variant nil;
         if (world.defaultsOverrides.has_value()) {
             auto itr = world.defaultsOverrides.value().data.find(key);
             if (itr != world.defaultsOverrides.value().data.end()) {
@@ -84,7 +86,7 @@ public:
         auto itr = defaults.data.find(key);
         if (itr == defaults.data.end()) {
             LogE("Can not get value for '%s'.", key.c_str());
-            return std::get<T>(nil);
+            return std::get<T>(m_nil);
         }
         return std::get<T>(itr->second);
     }

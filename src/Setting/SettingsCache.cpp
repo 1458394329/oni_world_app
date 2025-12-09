@@ -17,6 +17,8 @@
 #include "Utils/PointGenerator.hpp"
 #include "Utils/SortHelper.hpp"
 
+Variant SettingsCache::m_nil;
+
 template<typename T>
 static bool LoadJsonFile(mz_zip_archive &zip, int index, T &result)
 {

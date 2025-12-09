@@ -371,6 +371,13 @@ void Diagram::UpdateWeights()
     }
     min = 1.0f;
     for (auto &site : sites) {
+        if (site.neighbours.empty()) {
+            float dist = site.x * site.x + site.y * site.y;
+            float factor = dist / (std::abs(site.currentWeight) + 1.0f);
+            if (factor < min) {
+                min = factor;
+            }
+        }
         for (auto &neighbour : site.neighbours) {
             float diff = site.currentWeight - neighbour->currentWeight;
             float dist = site.DistanceSquared(*neighbour);
