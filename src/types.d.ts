@@ -10,7 +10,7 @@ interface Site {
 
 interface Description {
     type: number;
-    key?: string;
+    key: string;
     name: string;
 }
 
@@ -18,6 +18,15 @@ interface Geyser {
     index: number;
     pos: Point;
     desc: Description;
+}
+
+interface Cluster {
+    type: number;
+    index: number;
+    max: number;
+    prefix: string;
+    name: string;
+    traits: string;
 }
 
 interface World {

@@ -15,15 +15,15 @@ interface ToolBarProps {
 }
 
 const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
+    const hexChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const [drawer, setDrawer] = useState(true);
-    const [category, setCategory] = useState(0);
-    const [clusters, setClusters] = useState([0, 13, 27]);
+    const [cluster, setCluster] = useState(0);
+    const [traits, setTraits] = useState("ZZZZ");
     const [mixings, setMixings] = useState(9769375);
     const [seed, setSeed] = useState("");
     const translation = useTranslation();
     const toBase36 = (num: number) => {
         if (num === 0) return "0";
-        const hexChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         let text = "";
         while (num > 0) {
             text += hexChars[num % 36];
@@ -31,8 +31,16 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
         }
         return text;
     };
+    const traitsToNumber = () => {
+        let num = 0;
+        traits.split("").forEach((item) => {
+            if (item !== "0" && item !== "Z") {
+                num |= 1 << (hexChars.indexOf(item) - 1);
+            }
+        });
+        return -num;
+    };
     const generateWorld = (nseed: number) => {
-        const cluster = clusters[category];
         Module.worlds.length = 0;
         Module.app_generate(cluster, nseed, mixings);
         setSeed(Module.worlds[0].seed.toString());
@@ -44,23 +52,27 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
         } catch (err) {}
     };
     const onReroll = () => {
-        const nseed = Math.round(Math.random() * 0x7fffffff);
+        let nseed = traitsToNumber();
+        if (nseed === 0) {
+            nseed = Math.round(Math.random() * 0x7fffffff);
+        }
         generateWorld(nseed);
     };
     const onCopy = () => {
-        const cluster = clusters[category];
-        const name = configuration.cluster[cluster].key;
+        const name = configuration.cluster[cluster].prefix;
         const mix = toBase36(mixings);
         const sseed = `${name}-${seed}-0-D3-${mix}`;
         copyToClipboard(sseed);
     };
     const onSubmit = () => {
         setDrawer(false);
-        let nseed = 0;
-        if (seed.length === 0) {
-            nseed = Math.round(Math.random() * 0x7fffffff);
-        } else {
-            nseed = parseInt(seed);
+        let nseed = traitsToNumber();
+        if (nseed === 0) {
+            if (seed.length === 0) {
+                nseed = Math.round(Math.random() * 0x7fffffff);
+            } else {
+                nseed = parseInt(seed);
+            }
         }
         generateWorld(nseed);
     };
@@ -89,7 +101,7 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
                     {translation("Copy")}
                 </Button>
             </InputGroup>
-            <Offcanvas show={drawer} onHide={() => setDrawer(false)}>
+            <Offcanvas show={drawer} onHide={onSubmit}>
                 <Navbar className="justify-content-between">
                     <Container>
                         <div className="hstack">
@@ -104,16 +116,12 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
                 </Navbar>
                 <Offcanvas.Body>
                     <Settings
-                        category={category}
-                        clusters={clusters}
+                        cluster={configuration.cluster[cluster]}
                         mixings={mixings}
-                        onChange={(category, cluster, mixings) => {
-                            setCategory(category);
-                            setClusters(
-                                clusters.map((item, index) =>
-                                    index === category ? cluster : item
-                                )
-                            );
+                        traits={traits}
+                        onChange={(cluster, mixings, traits) => {
+                            setCluster(cluster);
+                            setTraits(traits);
                             setMixings(mixings);
                         }}
                     />

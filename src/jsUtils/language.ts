@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 
 interface Languages {
-    "zh-CN": Record<string, string>;
+    [key: string]: Record<string, string>;
 }
 
 const languages: Languages = {
@@ -109,6 +109,7 @@ const languages: Languages = {
         "Supply Teleporter Input": "供给传送器输入端",
         "Teleporter Transmitter": "传送发射/接收器",
         "Cryotank 3000": "低温箱3000",
+        "World Traits": "星球特质",
         "No Traits": "没有不寻常的特质",
         "Crashed Satellites": "坠毁的卫星群",
         "Frozen Friend": "冰封之友",
@@ -133,6 +134,7 @@ const languages: Languages = {
         "Metal Rich": "金属富足",
         "Alternate Pod Location": "备选的打印舱位置",
         "Slime Molds": "粘液菌团",
+        "Any Trait": "任意特质",
         "Initializing, please wait a moment.": "正在初始化, 请稍候...",
     },
 };
@@ -141,14 +143,8 @@ export const LanguageContext = createContext("zh-CN");
 export const useTranslation = () => {
     const language = useContext(LanguageContext);
     return (key: string) => {
-        switch (language) {
-            case "zh-CN": {
-                const chinese = languages["zh-CN"];
-                if (key in chinese) return chinese[key];
-                break;
-            }
-        }
-        return key;
+        const translation = languages[language] || {};
+        return translation[key] || key;
     };
 };
 

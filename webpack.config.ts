@@ -2,6 +2,7 @@ import path from "path";
 import * as webpack from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
+import packageJson from "./package.json";
 
 export default (
     _env: any,
@@ -54,6 +55,9 @@ export default (
                     { from: "*.bin", context: wasmpath },
                     { from: "*", context: "public" },
                 ],
+            }),
+            new webpack.DefinePlugin({
+                "process.env.VERSION": JSON.stringify(packageJson.version),
             }),
         ],
     };

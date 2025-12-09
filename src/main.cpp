@@ -9,6 +9,7 @@
 #endif
 
 #include <stack>
+#include <ranges>
 #include <algorithm>
 
 #include <clipper.hpp>
@@ -171,7 +172,7 @@ void App::SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag)
             break;
         }
     }
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         int seed = m_random.Next();
         m_settings.seed = seed + index;
         auto traits = m_settings.GetRandomTraits(*world);

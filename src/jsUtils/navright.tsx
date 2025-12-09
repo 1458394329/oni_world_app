@@ -76,7 +76,7 @@ const NavRight = ({ theme, onSetTheme }: NavRightProps) => {
             >
                 <Github size={24} />
             </Button>
-            <span>v1.0.6</span>
+            <span>{process.env.VERSION}</span>
         </>
     );
 };
