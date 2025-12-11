@@ -44,7 +44,15 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
         Module.worlds.length = 0;
         Module.app_generate(cluster, nseed, mixings);
         setSeed(Module.worlds[0].seed.toString());
+        Module.worlds.forEach(
+            (item) => (item.coord = getSeedString(item.seed))
+        );
         onSetWorld();
+    };
+    const getSeedString = (seed: number | string) => {
+        const name = configuration.cluster[cluster].prefix;
+        const mix = toBase36(mixings);
+        return `${name}-${seed}-0-D3-${mix}`;
     };
     const copyToClipboard = async (text: string): Promise<void> => {
         try {
@@ -58,12 +66,7 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
         }
         generateWorld(nseed);
     };
-    const onCopy = () => {
-        const name = configuration.cluster[cluster].prefix;
-        const mix = toBase36(mixings);
-        const sseed = `${name}-${seed}-0-D3-${mix}`;
-        copyToClipboard(sseed);
-    };
+    const onCopy = () => copyToClipboard(getSeedString(seed));
     const onSubmit = () => {
         setDrawer(false);
         let nseed = traitsToNumber();

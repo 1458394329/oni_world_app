@@ -102,7 +102,16 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
         //    navigator.serviceWorker.register("./serviceworker.js");
         //}
     }, []);
-    const onSetWorlds = () => setWorlds([...Module.worlds]);
+    const onSetWorlds = () => {
+        if (Module.worlds.length === 0) {
+            return;
+        }
+        if (Module.worlds[0].type !== 0) {
+            setWorlds([Module.worlds[1], Module.worlds[0]]);
+        } else {
+            setWorlds([...Module.worlds]);
+        }
+    }
     const onSetTheme = (lang: string, theme: number) => {
         onSetLanguage(lang);
         setTheme(theme);

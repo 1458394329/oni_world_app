@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 import { useContext, useEffect } from "react";
 import { LanguageContext, useTranslation } from "./language";
 import { Card, Col } from "react-bootstrap";
@@ -67,6 +67,7 @@ export const WorldCanvas = ({ worlds, theme }: WorldCanvasProps) => {
         worlds.forEach((world) => {
             let point = world.starting;
             let text = translation(startBaseName.at(world.type)!);
+            ctx.fillStyle = "black";
             ctx.fillText(text, point.x * scale, point.y * scale + offset);
             world.geysers.forEach((item) => {
                 const w = 5 * scale;
@@ -76,6 +77,10 @@ export const WorldCanvas = ({ worlds, theme }: WorldCanvasProps) => {
                 ctx.strokeRect(x - w / 2, y - h, w, h);
                 ctx.fillText(translation(item.desc.name), x, y);
             });
+            if (world.type === 0) {
+                ctx.fillStyle = "lightgray";
+                ctx.fillText(world.coord, (world.size.x / 2) * scale, 15);
+            }
             offset += world.size.y * scale;
         });
     }, [worlds, language, theme]);

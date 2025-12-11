@@ -18,6 +18,7 @@ export const updateWorld = (type: number, count: number, data: number) => {
             Module.worlds.push({
                 type: count,
                 seed: 0,
+                coord: "",
                 starting: { x: x, y: y },
                 size: { x: 0, y: 0 },
                 traits: [],

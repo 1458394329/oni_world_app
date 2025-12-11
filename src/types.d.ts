@@ -32,6 +32,7 @@ interface Cluster {
 interface World {
     type: number;
     seed: number;
+    coord: string;
     size: Point;
     starting: Point;
     traits: Array<number>;
