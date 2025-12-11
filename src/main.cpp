@@ -172,17 +172,27 @@ void App::SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag)
             break;
         }
     }
+    size_t maxCount = 0;
+    int maxCountSeed = 0;
     for (int i = 0; i < 1000; ++i) {
         int seed = m_random.Next();
         m_settings.seed = seed + index;
         auto traits = m_settings.GetRandomTraits(*world);
         m_settings.seed = seed;
-        if (std::ranges::all_of(presets, [&traits](const WorldTrait *trait) {
-                return std::ranges::contains(traits, trait);
-            })) {
+        size_t count = 0;
+        for (auto *preset : presets) {
+            if (std::ranges::contains(traits, preset)) {
+                ++count;
+            }
+        }
+        if (count == presets.size()) {
             return;
+        } else if (maxCount < count) {
+            maxCount = count;
+            maxCountSeed = seed;
         }
     }
+    m_settings.seed = maxCountSeed;
     LogI("can not find seed for preset traits");
 }
 
