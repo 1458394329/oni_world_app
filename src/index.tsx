@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { Navbar, Container, Stack, Row, Col } from "react-bootstrap";
-import { Card, Modal } from "react-bootstrap";
+import { Card, Modal, Tabs, Tab } from "react-bootstrap";
 
 import { LanguageContext, useTranslation } from "./jsUtils/language";
 import configuration from "./jsUtils/configuration";
@@ -26,18 +26,69 @@ const WorldInfo = ({ world }: { world: World }) => {
             <Row xs={2} md={4}>
                 {world.traits.map((item, index) => (
                     <Card key={index} text={convert(traits[item].type)}>
-                        <Card.Body>{translation(traits[item].name)}</Card.Body>
+                        <Card.Body style={{ padding: "0.75rem 0" }}>
+                            {translation(traits[item].name)}
+                        </Card.Body>
                     </Card>
                 ))}
             </Row>
             <Row xs={2} md={4}>
                 {world.geysers.map((item, index) => (
                     <Card key={index} text={convert(item.desc.type)}>
-                        <Card.Body>{translation(item.desc.name)}</Card.Body>
+                        <Card.Body style={{ padding: "0.75rem 0" }}>
+                            {translation(item.desc.name)}
+                        </Card.Body>
                     </Card>
                 ))}
             </Row>
         </>
+    );
+};
+
+const Biomes = () => {
+    const biomes = [
+        "Tundra Biome",
+        "",
+        "Marsh Biome",
+        "Sandstone Biome",
+        "Jungle Biome",
+        "Magma Biome",
+        "Oily Biome",
+        "Space Biome",
+        "Ocean Biome",
+        "Rust Biome",
+        "Forest Biome",
+        "Radioactive Biome",
+        "Swampy Biome",
+        "Wasteland Biome",
+        "",
+        "Metallic Biome",
+        "Barren Biome",
+        "Moo Biome",
+        "Ice Cave Biome",
+        "Cool Pool Biome",
+        "Nectar Biome",
+        "Garden Biome",
+        "Feather Biome",
+        "Wetlands Biome",
+    ];
+    const translation = useTranslation();
+    return (
+        <Row xs={3}>
+            {biomes.map(
+                (item, index) =>
+                    item !== "" && (
+                        <Card key={index}>
+                            <Card.Body style={{ padding: "0.75rem 0" }}>
+                                <span
+                                    className={"biome-icon icon" + index}
+                                > </span>
+                                <span>{translation(item)}</span>
+                            </Card.Body>
+                        </Card>
+                    )
+            )}
+        </Row>
     );
 };
 
@@ -111,7 +162,7 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
         } else {
             setWorlds([...Module.worlds]);
         }
-    }
+    };
     const onSetTheme = (lang: string, theme: number) => {
         onSetLanguage(lang);
         setTheme(theme);
@@ -141,9 +192,19 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
             <Container>
                 <Row>
                     <Col lg={12} xl={6}>
-                        {worlds.map((world, index) => (
-                            <WorldInfo key={index} world={world} />
-                        ))}
+                        <Tabs defaultActiveKey="info" className="mb-3">
+                            <Tab
+                                eventKey="info"
+                                title={translation("Information")}
+                            >
+                                {worlds.map((world, index) => (
+                                    <WorldInfo key={index} world={world} />
+                                ))}
+                            </Tab>
+                            <Tab eventKey="biome" title={translation("Biomes")}>
+                                <Biomes />
+                            </Tab>
+                        </Tabs>
                     </Col>
                     <WorldCanvas worlds={worlds} theme={theme} />
                 </Row>
