@@ -1,3 +1,4 @@
+import { createContext } from "react";
 import configuration from "./configuration";
 
 const enum ResultType {
@@ -86,3 +87,5 @@ export const updateWorld = (type: number, count: number, data: number) => {
             console.log("wrong type: " + type);
     }
 };
+
+export const ThemeContext = createContext(0);

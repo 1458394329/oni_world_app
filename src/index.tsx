@@ -16,7 +16,7 @@ import configuration from "./jsUtils/configuration";
 import WorldCanvas from "./jsUtils/worldcanvas";
 import ToolBar from "./jsUtils/toolbar";
 import NavRight from "./jsUtils/navright";
-import { updateWorld } from "./jsUtils";
+import { updateWorld, ThemeContext } from "./jsUtils";
 
 import "./jsUtils/index.css";
 import zonesImageUrl from "../asset/zones.png";
@@ -89,7 +89,7 @@ const Biomes = () => {
                             <Card.Body style={{ padding: "0.75rem 0" }}>
                                 <span
                                     className={"biome-icon icon" + index}
-                                > </span>
+                                ></span>
                                 <span>{translation(item)}</span>
                             </Card.Body>
                         </Card>
@@ -111,10 +111,14 @@ const createSprite = (e: Event) => {
     Promise.all(promises).then((sprites) => Module.sprite.push(...sprites));
 };
 
-const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
+interface AppProps {
+    onSetLanguage: (lang: string) => void;
+    onSetTheme: (theme: number) => void;
+}
+
+const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
     const [loading, setLoading] = useState(true);
     const [worlds, setWorlds] = useState(new Array<World>());
-    const [theme, setTheme] = useState(0);
     const language = useContext(LanguageContext);
     const translation = useTranslation();
     useEffect(() => {
@@ -170,11 +174,9 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
             setWorlds([...Module.worlds]);
         }
     };
-    const onSetTheme = (lang: string, theme: number) => {
+    const onSetAppConfig = (lang: string, theme: number) => {
         onSetLanguage(lang);
-        setTheme(theme);
-        const expect = theme === 0 ? "light" : "dark";
-        document.documentElement.setAttribute("data-bs-theme", expect);
+        onSetTheme(theme);
     };
     return (
         <>
@@ -182,8 +184,7 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
                 <Container>
                     <Stack direction="horizontal">
                         <ToolBar
-                            theme={theme}
-                            onSetTheme={onSetTheme}
+                            onSetAppConfig={onSetAppConfig}
                             onSetWorld={onSetWorlds}
                         />
                     </Stack>
@@ -192,7 +193,7 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
                         className="d-none d-md-flex"
                         gap={3}
                     >
-                        <NavRight theme={theme} onSetTheme={onSetTheme} />
+                        <NavRight onSetAppConfig={onSetAppConfig} />
                     </Stack>
                 </Container>
             </Navbar>
@@ -213,7 +214,7 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
                             </Tab>
                         </Tabs>
                     </Col>
-                    <WorldCanvas worlds={worlds} theme={theme} />
+                    <WorldCanvas worlds={worlds} />
                 </Row>
             </Container>
             <Modal
@@ -232,11 +233,26 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
 };
 
 const Main: React.FC = () => {
+    const initTheme = (): number => {
+        return matchMedia("(prefers-color-scheme: dark)").matches ? 1 : 0;
+    };
     const [language, setLanguage] = useState(navigator.language);
+    const [theme, setTheme] = useState(initTheme());
+    useEffect(() => {
+        const expect = theme === 0 ? "light" : "dark";
+        document.documentElement.setAttribute("data-bs-theme", expect);
+    }, [theme]);
+    const onSetTheme = (theme: number) => {
+        const expect = theme === 0 ? "light" : "dark";
+        document.documentElement.setAttribute("data-bs-theme", expect);
+        setTheme(theme);
+    };
     return (
-        <LanguageContext.Provider value={language}>
-            <App onSetLanguage={(lang) => setLanguage(lang)} />
-        </LanguageContext.Provider>
+        <ThemeContext.Provider value={theme}>
+            <LanguageContext.Provider value={language}>
+                <App onSetLanguage={setLanguage} onSetTheme={onSetTheme} />
+            </LanguageContext.Provider>
+        </ThemeContext.Provider>
     );
 };
 

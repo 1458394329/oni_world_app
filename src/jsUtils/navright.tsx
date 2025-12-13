@@ -11,15 +11,16 @@ import Github from "react-bootstrap-icons/dist/icons/github";
 
 import configuration from "./configuration";
 import { LanguageContext, useTranslation } from "./language";
+import { ThemeContext } from "./index";
 
 interface NavRightProps {
-    theme: number;
-    onSetTheme: (lang: string, theme: number) => void;
+    onSetAppConfig: (lang: string, theme: number) => void;
 }
 
-const NavRight = ({ theme, onSetTheme }: NavRightProps) => {
+const NavRight = ({ onSetAppConfig }: NavRightProps) => {
     const [show, setShow] = useState(false);
     const target = useRef(null);
+    const theme = useContext(ThemeContext);
     const language = useContext(LanguageContext);
     const translation = useTranslation();
     return (
@@ -49,7 +50,7 @@ const NavRight = ({ theme, onSetTheme }: NavRightProps) => {
                                 action
                                 onClick={() => {
                                     setShow(false);
-                                    onSetTheme(item.key, theme);
+                                    onSetAppConfig(item.key, theme);
                                 }}
                             >
                                 {item.name}
@@ -61,7 +62,7 @@ const NavRight = ({ theme, onSetTheme }: NavRightProps) => {
             <Button
                 variant="secondary"
                 className="round-button"
-                onClick={() => onSetTheme(language, theme ? 0 : 1)}
+                onClick={() => onSetAppConfig(language, theme ? 0 : 1)}
                 title={translation(
                     `Toggle to ${theme ? "Light" : "Dark"} mode`
                 )}

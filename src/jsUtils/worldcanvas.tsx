@@ -3,15 +3,16 @@ import { useContext, useEffect } from "react";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
 import { LanguageContext, useTranslation } from "./language";
+import { ThemeContext } from "./index";
 
 interface WorldCanvasProps {
     worlds: Array<World>;
-    theme: number;
 }
 
 const zonePattern: Array<CanvasPattern> = [];
 
-export const WorldCanvas = ({ worlds, theme }: WorldCanvasProps) => {
+export const WorldCanvas = ({ worlds }: WorldCanvasProps) => {
+    const theme = useContext(ThemeContext);
     const language = useContext(LanguageContext);
     const translation = useTranslation();
     useEffect(() => {

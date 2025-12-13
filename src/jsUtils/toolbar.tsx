@@ -13,12 +13,11 @@ import Settings from "./settings";
 import NavRight from "./navright";
 
 interface ToolBarProps {
-    theme: number;
-    onSetTheme: (lang: string, theme: number) => void;
+    onSetAppConfig: (lang: string, theme: number) => void;
     onSetWorld: () => void;
 }
 
-const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
+const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
     const hexChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const [drawer, setDrawer] = useState(true);
     const [cluster, setCluster] = useState(0);
@@ -117,7 +116,7 @@ const ToolBar = ({ theme, onSetTheme, onSetWorld }: ToolBarProps) => {
                             </Button>
                         </div>
                         <div className="d-flex d-md-none hstack gap-3">
-                            <NavRight theme={theme} onSetTheme={onSetTheme} />
+                            <NavRight onSetAppConfig={onSetAppConfig} />
                         </div>
                     </Container>
                 </Navbar>
