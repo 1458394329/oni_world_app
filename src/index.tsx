@@ -1,8 +1,15 @@
 import React from "react";
 import { useState, useEffect, useContext } from "react";
 import { createRoot } from "react-dom/client";
-import { Navbar, Container, Stack, Row, Col } from "react-bootstrap";
-import { Card, Modal, Tabs, Tab } from "react-bootstrap";
+import Navbar from "react-bootstrap/Navbar";
+import Container from "react-bootstrap/Container";
+import Stack from "react-bootstrap/Stack";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Card from "react-bootstrap/Card";
+import Modal from "react-bootstrap/Modal";
+import Tabs from "react-bootstrap/Tabs";
+import Tab from "react-bootstrap/Tab";
 
 import { LanguageContext, useTranslation } from "./jsUtils/language";
 import configuration from "./jsUtils/configuration";
@@ -11,8 +18,8 @@ import ToolBar from "./jsUtils/toolbar";
 import NavRight from "./jsUtils/navright";
 import { updateWorld } from "./jsUtils";
 
-import "bootstrap/dist/css/bootstrap.min.css";
 import "./jsUtils/index.css";
+import zonesImageUrl from "../asset/zones.png";
 
 const WorldInfo = ({ world }: { world: World }) => {
     const translation = useTranslation();
@@ -148,7 +155,7 @@ const App = ({ onSetLanguage }: { onSetLanguage: (lang: string) => void }) => {
         });
         const image = new Image();
         image.onload = createSprite;
-        image.src = "zones.png?2";
+        image.src = zonesImageUrl;
         //if ("serviceWorker" in navigator) {
         //    navigator.serviceWorker.register("./serviceworker.js");
         //}

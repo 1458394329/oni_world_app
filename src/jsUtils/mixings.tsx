@@ -1,5 +1,8 @@
 import React from "react";
-import { FloatingLabel, Form, Row, Col } from "react-bootstrap";
+import FloatingLabel from "react-bootstrap/FloatingLabel";
+import Form from "react-bootstrap/Form";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
 import configuration from "./configuration";
 import useTranslation from "./language";

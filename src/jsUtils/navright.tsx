@@ -1,7 +1,13 @@
 import React from "react";
 import { useContext, useRef, useState } from "react";
-import { Button, ListGroup, Overlay, Popover } from "react-bootstrap";
-import { Translate, Sun, MoonStars, Github } from "react-bootstrap-icons";
+import Button from "react-bootstrap/Button";
+import ListGroup from "react-bootstrap/ListGroup";
+import Overlay from "react-bootstrap/Overlay";
+import Popover from "react-bootstrap/Popover";
+import Translate from "react-bootstrap-icons/dist/icons/translate";
+import Sun from "react-bootstrap-icons/dist/icons/sun";
+import MoonStars from "react-bootstrap-icons/dist/icons/moon-stars";
+import Github from "react-bootstrap-icons/dist/icons/github";
 
 import configuration from "./configuration";
 import { LanguageContext, useTranslation } from "./language";

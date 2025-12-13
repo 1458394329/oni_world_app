@@ -1,7 +1,8 @@
 import React from "react";
 import { useContext, useEffect } from "react";
+import Card from "react-bootstrap/Card";
+import Col from "react-bootstrap/Col";
 import { LanguageContext, useTranslation } from "./language";
-import { Card, Col } from "react-bootstrap";
 
 interface WorldCanvasProps {
     worlds: Array<World>;

@@ -1,3 +1,28 @@
+declare module "*.png" {
+    const value: string;
+    export default value;
+}
+
+declare module 'react-bootstrap-icons/dist/icons/translate' {
+    const value: Icon;
+    export default value;
+}
+
+declare module 'react-bootstrap-icons/dist/icons/sun' {
+    const value: Icon;
+    export default value;
+}
+
+declare module 'react-bootstrap-icons/dist/icons/moon-stars' {
+    const value: Icon;
+    export default value;
+}
+
+declare module 'react-bootstrap-icons/dist/icons/github' {
+    const value: Icon;
+    export default value;
+}
+
 interface Point {
     x: number;
     y: number;

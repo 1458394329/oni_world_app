@@ -1,7 +1,11 @@
 import React from "react";
 import { useState } from "react";
-import { Button, Container, Form, InputGroup } from "react-bootstrap";
-import { Navbar, Offcanvas, Stack } from "react-bootstrap";
+import InputGroup from "react-bootstrap/InputGroup";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Offcanvas from "react-bootstrap/Offcanvas";
+import Navbar from "react-bootstrap/Navbar";
+import Container from "react-bootstrap/Container";
 
 import configuration from "./configuration";
 import useTranslation from "./language";
