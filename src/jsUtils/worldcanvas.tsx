@@ -7,11 +7,12 @@ import { ThemeContext } from "./index";
 
 interface WorldCanvasProps {
     worlds: Array<World>;
+    focus: number;
 }
 
 const zonePattern: Array<CanvasPattern> = [];
 
-export const WorldCanvas = ({ worlds }: WorldCanvasProps) => {
+export const WorldCanvas = ({ worlds, focus }: WorldCanvasProps) => {
     const theme = useContext(ThemeContext);
     const language = useContext(LanguageContext);
     const translation = useTranslation();
@@ -34,6 +35,7 @@ export const WorldCanvas = ({ worlds }: WorldCanvasProps) => {
         }
         const scale = width / worlds[0].size.x;
         const ctx = cvs.getContext("2d")!;
+        ctx.translate((cvs.clientWidth - width) / 2, 0);
         ctx.fillStyle = theme ? "#212529" : "white";
         ctx.fillRect(0, 0, cvs.width, cvs.height);
         ctx.strokeRect(0, 0, width, height);
@@ -65,6 +67,7 @@ export const WorldCanvas = ({ worlds }: WorldCanvasProps) => {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         const startBaseName = ["Printing Pod", "Secondary Asteroid Base", ""];
+        let count = 0;
         offset = 0;
         worlds.forEach((world) => {
             let point = world.starting;
@@ -79,13 +82,24 @@ export const WorldCanvas = ({ worlds }: WorldCanvasProps) => {
                 ctx.strokeRect(x - w / 2, y - h, w, h);
                 ctx.fillText(translation(item.desc.name), x, y);
             });
+            if (count <= focus && focus < count + world.geysers.length) {
+                const item = world.geysers[focus - count];
+                const x = item.pos.x * scale;
+                const y = item.pos.y * scale + offset;
+                ctx.fillStyle = "red";
+                ctx.lineWidth = 3;
+                ctx.strokeText(translation(item.desc.name), x, y);
+                ctx.fillText(translation(item.desc.name), x, y);
+                ctx.lineWidth = 1;
+            }
+            count += world.geysers.length;
             if (world.type === 0) {
                 ctx.fillStyle = "lightgray";
                 ctx.fillText(world.coord, (world.size.x / 2) * scale, 15);
             }
             offset += world.size.y * scale;
         });
-    }, [worlds, language, theme]);
+    }, [worlds, focus, language, theme]);
     return (
         <Col>
             <Card className="world-canvas-container">

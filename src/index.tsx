@@ -21,7 +21,12 @@ import { updateWorld, ThemeContext } from "./jsUtils";
 import "./jsUtils/index.css";
 import zonesImageUrl from "../asset/zones.png";
 
-const WorldInfo = ({ world }: { world: World }) => {
+interface WorldInfoProps {
+    world: World;
+    onSetFocus: (index: number) => void;
+}
+
+const WorldInfo = ({ world, onSetFocus }: WorldInfoProps) => {
     const translation = useTranslation();
     const convert = (color?: number) => {
         const list = ["success", "danger", "primary"];
@@ -41,7 +46,12 @@ const WorldInfo = ({ world }: { world: World }) => {
             </Row>
             <Row xs={2} md={4}>
                 {world.geysers.map((item, index) => (
-                    <Card key={index} text={convert(item.desc.type)}>
+                    <Card
+                        key={index}
+                        text={convert(item.desc.type)}
+                        onMouseEnter={() => onSetFocus(index)}
+                        onMouseLeave={() => onSetFocus(-1)}
+                    >
                         <Card.Body style={{ padding: "0.75rem 0" }}>
                             {translation(item.desc.name)}
                         </Card.Body>
@@ -119,6 +129,7 @@ interface AppProps {
 const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
     const [loading, setLoading] = useState(true);
     const [worlds, setWorlds] = useState(new Array<World>());
+    const [focus, setFocus] = useState(-1);
     const language = useContext(LanguageContext);
     const translation = useTranslation();
     useEffect(() => {
@@ -165,6 +176,7 @@ const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
         //}
     }, []);
     const onSetWorlds = () => {
+        setFocus(-1);
         if (Module.worlds.length === 0) {
             return;
         }
@@ -177,6 +189,35 @@ const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
     const onSetAppConfig = (lang: string, theme: number) => {
         onSetLanguage(lang);
         onSetTheme(theme);
+    };
+    const onSetFocus = (world: number, geyser: number) => {
+        if (geyser === -1) {
+            setFocus(-1);
+            return;
+        }
+        let offset = 0;
+        for (let i = 0; i < world; i++) {
+            offset += worlds[i].geysers.length;
+        }
+        setFocus(geyser + offset);
+    };
+    const tabsElement = () => {
+        return (
+            <Tabs defaultActiveKey="info" className="mb-3">
+                <Tab eventKey="info" title={translation("Information")}>
+                    {worlds.map((world, index) => (
+                        <WorldInfo
+                            key={index}
+                            world={world}
+                            onSetFocus={(geyser) => onSetFocus(index, geyser)}
+                        />
+                    ))}
+                </Tab>
+                <Tab eventKey="biome" title={translation("Biomes")}>
+                    <Biomes />
+                </Tab>
+            </Tabs>
+        );
     };
     return (
         <>
@@ -200,21 +241,9 @@ const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
             <Container>
                 <Row>
                     <Col lg={12} xl={6}>
-                        <Tabs defaultActiveKey="info" className="mb-3">
-                            <Tab
-                                eventKey="info"
-                                title={translation("Information")}
-                            >
-                                {worlds.map((world, index) => (
-                                    <WorldInfo key={index} world={world} />
-                                ))}
-                            </Tab>
-                            <Tab eventKey="biome" title={translation("Biomes")}>
-                                <Biomes />
-                            </Tab>
-                        </Tabs>
+                        {tabsElement()}
                     </Col>
-                    <WorldCanvas worlds={worlds} />
+                    <WorldCanvas worlds={worlds} focus={focus} />
                 </Row>
             </Container>
             <Modal
