@@ -59,6 +59,7 @@ export const updateWorld = (type: number, count: number, data: number) => {
             const world = Module.worlds.at(-1)!;
             const end = offset + count;
             while (offset < end) {
+                const hole = Module.HEAP32[offset++];
                 const zone = Module.HEAP32[offset++];
                 const size = Module.HEAP32[offset++];
                 const poly = new Array<Point>();
@@ -67,7 +68,11 @@ export const updateWorld = (type: number, count: number, data: number) => {
                     const y = Module.HEAP32[offset++];
                     poly.push({ x: x, y: y });
                 }
-                world.sites.push({ zone: zone, poly: poly });
+                if (hole === 0) {
+                   world.sites.push({ zone: zone, poly: poly });
+                } else {
+                   world.sites.unshift({ zone: zone, poly: poly });
+                }
             }
             break;
         }

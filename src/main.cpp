@@ -93,7 +93,8 @@ public:
     void SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag);
     void SetResult(int seed, int worldType, WorldGen &worldGen,
                    std::vector<const WorldTrait *> &traits);
-    static Polygon GetZonePolygon(Site &site);
+    // union sites with the same zone type. if result has hole return true.
+    static bool GetZonePolygon(Site &site, Polygon &polygon);
 };
 
 bool App::Generate(const std::string &code, int traitsFlag)
@@ -232,7 +233,9 @@ void App::SetResult(int seed, int worldType, WorldGen &worldGen,
         if (item.visited) {
             continue;
         }
-        auto polygon = GetZonePolygon(item);
+        Polygon polygon;
+        bool hasHole = GetZonePolygon(item, polygon);
+        result.push_back(hasHole ? 1 : 0);
         result.push_back((int)item.subworld->zoneType);
         result.push_back((int)polygon.Vertices.size());
         for (auto &vex : polygon.Vertices) {
@@ -243,7 +246,7 @@ void App::SetResult(int seed, int worldType, WorldGen &worldGen,
     jsSetGeyserInfo(RT_Polygon, (uint32_t)result.size(), (size_t)result.data());
 }
 
-Polygon App::GetZonePolygon(Site &site)
+bool App::GetZonePolygon(Site &site, Polygon &polygon)
 {
     ZoneType zoneType = site.subworld->zoneType;
     ClipperLib::Clipper clipper;
@@ -276,7 +279,6 @@ Polygon App::GetZonePolygon(Site &site)
     ClipperLib::Paths paths;
     clipper.Execute(ClipperLib::ctUnion, polytree, ClipperLib::pftEvenOdd);
     ClipperLib::PolyTreeToPaths(polytree, paths);
-    Polygon polygon;
     if (!paths.empty()) {
         auto &path = paths[0];
         for (auto &item : path) {
@@ -284,7 +286,7 @@ Polygon App::GetZonePolygon(Site &site)
             polygon.Vertices.emplace_back(point * 0.0001f);
         }
     }
-    return polygon;
+    return paths.size() > 1;
 }
 
 extern "C" void EMSCRIPTEN_KEEPALIVE app_init(int seed)
