@@ -18,7 +18,6 @@ private:
     const SettingsCache &m_settings;
     const World &m_world;
     WorldPlacement *m_placement = nullptr;
-    std::vector<Site> m_sites;
     std::vector<TemplateSpawner> m_templates;
 
 public:
@@ -29,12 +28,9 @@ public:
     {
     }
 
-    bool GenerateOverworld();
+    bool GenerateOverworld(std::vector<Site> &sites);
 
-    std::vector<Vector3i> GetGeysers(int seed);
-    Vector2i GetStarting() { return {m_sites[0].x, m_sites[0].y}; }
-    Vector2i GetWorldSize() { return m_world.worldsize; }
-    std::vector<Site> &GetSites() { return m_sites; }
+    std::vector<Vector3i> GetGeysers(int seed) const;
 
 private:
     template<typename T>
@@ -42,7 +38,7 @@ private:
     {
         return m_settings.GetDefaultData<T>(m_world, key);
     }
-    std::vector<Site> &GenerateSeedPoints(KRandom &random);
+    bool GenerateSeedPoints(KRandom &random, std::vector<Site> &sites);
     void PropagateDistanceTags(std::vector<Site> &sites) const;
     void ConvertUnknownCells(std::vector<Site> &allSites, KRandom &random);
     void GenerateChildren(Site &site, KRandom &random, int seed, bool usePD);

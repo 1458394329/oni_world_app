@@ -36,11 +36,10 @@ static std::vector<Site *> ForceLowestToLeaf(std::vector<Site> &sites);
 static void ApplySwapTags(std::vector<Site> &sites, KRandom &random);
 extern void WriteToBinary(const std::vector<Site> &sites);
 
-bool WorldGen::GenerateOverworld()
+bool WorldGen::GenerateOverworld(std::vector<Site> &sites)
 {
     KRandom random(m_seed);
-    auto &sites = GenerateSeedPoints(random);
-    if (sites.empty()) {
+    if (!GenerateSeedPoints(random, sites)) {
         return false;
     }
     bool usePD = m_world.layoutMethod == LayoutMethod::PowerTree;
@@ -456,7 +455,7 @@ void WorldGen::PropagateDistanceTags(std::vector<Site> &sites) const
     }
 }
 
-std::vector<Site> &WorldGen::GenerateSeedPoints(KRandom &random)
+bool WorldGen::GenerateSeedPoints(KRandom &random, std::vector<Site> &sites)
 {
     auto mapWidth = m_world.worldsize.x;
     auto mapHeight = m_world.worldsize.y;
@@ -481,7 +480,7 @@ std::vector<Site> &WorldGen::GenerateSeedPoints(KRandom &random)
     auto subworld = m_settings.subworlds.find(m_world.startSubworldName);
     if (subworld == m_settings.subworlds.end()) {
         LogE("start subworld %s wrong.", m_world.startSubworldName.c_str());
-        return m_sites;
+        return false;
     }
     float overridePower = -1.0f;
     if (subworldFile != m_world.subworldFiles2.end() &&
@@ -489,12 +488,13 @@ std::vector<Site> &WorldGen::GenerateSeedPoints(KRandom &random)
         overridePower = (*subworldFile)->overridePower;
     }
     int index = 1;
-    m_sites.emplace_back(index++, position[0]);
-    ApplySubworldToNode(m_sites.back(), subworld->second, overridePower);
+    sites.reserve(points.size() + 10); // reserve with dummy sites;
+    sites.emplace_back(index++, position[0]);
+    ApplySubworldToNode(sites.back(), subworld->second, overridePower);
     for (auto &point : points) {
-        m_sites.emplace_back(index++, point);
+        sites.emplace_back(index++, point);
     }
-    return m_sites;
+    return true;
 }
 
 void WorldGen::SetFeatureBiome(Site &site, KRandom &random,
@@ -624,7 +624,7 @@ void WorldGen::GenerateChildren(Site &site, KRandom &externRrandom, int seed,
     }
 }
 
-std::vector<Vector3i> WorldGen::GetGeysers(int globalWorldSeed)
+std::vector<Vector3i> WorldGen::GetGeysers(int globalWorldSeed) const
 {
     const char *configs[] = {
         "steam",           "hot_steam",       "hot_water",
@@ -642,8 +642,9 @@ std::vector<Vector3i> WorldGen::GetGeysers(int globalWorldSeed)
     for (auto &templt : m_templates) {
         const std::string &name = templt.container->name;
         Vector2<int> pos{templt.position};
+        pos.y = (int)m_world.worldsize.y - pos.y;
         if (name == "geysers/generic") {
-            int seed = globalWorldSeed + pos.x + pos.y;
+            int seed = globalWorldSeed + pos.x + (int)templt.position.y;
             int index = KRandom(seed).Next(0, count);
             if (!m_settings.IsSpaceOutEnabled() && index == 19) {
                 index = 21;
@@ -668,7 +669,7 @@ std::vector<Vector3i> WorldGen::GetGeysers(int globalWorldSeed)
                 for (int index = 0; index < (int)std::size(configs); ++index) {
                     if (geyser == configs[index]) {
                         pos.x += item.location_x;
-                        pos.y += item.location_y;
+                        pos.y -= item.location_y;
                         result.emplace_back(pos.x, pos.y, index);
                         break;
                     }

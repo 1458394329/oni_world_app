@@ -18,7 +18,9 @@
 #include "Setting/SettingsCache.hpp"
 #include "WorldGen.hpp"
 
-extern "C" void jsSetGeyserInfo(uint32_t type, uint32_t count, size_t data);
+// I defined only one function for exchanging data between c++ and js,
+// it get resource from js and set result to js.
+extern "C" void jsExchangeData(uint32_t type, uint32_t count, size_t data);
 
 enum ResultType {
     RT_Starting,
@@ -29,6 +31,7 @@ enum ResultType {
     RT_Resource
 };
 
+// for debug
 void WriteToBinary(const std::vector<Site> &sites)
 {
     static int index = 10;
@@ -61,7 +64,7 @@ void WriteToBinary(const std::vector<Site> &sites)
             }
         }
     }
-    jsSetGeyserInfo(index++, (uint32_t)data.size(), (uint32_t)data.data());
+    jsExchangeData(index++, (uint32_t)data.size(), (uint32_t)data.data());
 }
 
 class App
@@ -83,7 +86,7 @@ public:
     {
         uint32_t count = SETTING_ASSET_FILESIZE;
         auto data = std::make_unique<char[]>(count);
-        jsSetGeyserInfo(RT_Resource, count, (size_t)data.get());
+        jsExchangeData(RT_Resource, count, (size_t)data.get());
         std::string_view content(data.get(), count);
         m_settings.LoadSettingsCache(content);
         m_random = KRandom(seed);
@@ -91,8 +94,10 @@ public:
 
     bool Generate(const std::string &code, int traits);
     void SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag);
-    void SetResult(int seed, int worldType, WorldGen &worldGen,
-                   std::vector<const WorldTrait *> &traits);
+    void SetResultWorldInfo(int seed, World *world, std::vector<Site> &sites);
+    void SetResultTraits(const std::vector<const WorldTrait *> &traits);
+    void SetResultGeysers(int seed, const WorldGen &worldGen);
+    void SetResultPolygons(World *world, std::vector<Site> &sites);
     // union sites with the same zone type. if result has hole return true.
     static bool GetZonePolygon(Site &site, Polygon &polygon);
 };
@@ -103,9 +108,8 @@ bool App::Generate(const std::string &code, int traitsFlag)
         LogE("parse seed code %s failed.", code.c_str());
         return false;
     }
-    auto &cluster = *m_settings.cluster;
     std::vector<World *> worlds;
-    for (auto &worldPlacement : cluster.worldPlacements) {
+    for (auto &worldPlacement : m_settings.cluster->worldPlacements) {
         auto itr = m_settings.worlds.find(worldPlacement.world);
         if (itr == m_settings.worlds.end()) {
             LogE("world %s was wrong.", worldPlacement.world.c_str());
@@ -125,11 +129,10 @@ bool App::Generate(const std::string &code, int traitsFlag)
     bool genWarpWorld = code.find("M-") == 0;
     for (size_t i = 0; i < worlds.size(); ++i) {
         auto world = worlds[i];
-        int worldType = 1; // second world
         if (world->locationType == LocationType::Cluster) {
             continue;
         } else if (world->locationType == LocationType::StartWorld) {
-            worldType = 0;
+            // go on;
         } else if (!world->startingBaseTemplate.contains("::bases/warpworld")) {
             continue; // other inner cluster
         } else if (!genWarpWorld) {
@@ -141,11 +144,15 @@ bool App::Generate(const std::string &code, int traitsFlag)
             world->ApplayTraits(*trait, m_settings);
         }
         WorldGen worldGen(*world, m_settings);
-        if (!worldGen.GenerateOverworld()) {
+        std::vector<Site> sites;
+        if (!worldGen.GenerateOverworld(sites)) {
             LogE("generate overworld failed.");
             return false;
         }
-        SetResult(seed, worldType, worldGen, traits);
+        SetResultWorldInfo(seed, world, sites);
+        SetResultTraits(traits);
+        SetResultGeysers(seed, worldGen);
+        SetResultPolygons(world, sites);
     }
     return true;
 }
@@ -197,16 +204,20 @@ void App::SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag)
     LogI("can not find seed for preset traits");
 }
 
-void App::SetResult(int seed, int worldType, WorldGen &worldGen,
-                    std::vector<const WorldTrait *> &traits)
+void App::SetResultWorldInfo(int seed, World *world, std::vector<Site> &sites)
 {
-    // 0 starting base, 1 traits, 2 geysers, 3 polygons, 4 world size
-    Vector2i starting = worldGen.GetStarting();
-    Vector2i worldSize = worldGen.GetWorldSize();
+    Vector2i starting = {sites[0].x, sites[0].y};
+    Vector2i worldSize = world->worldsize;
     starting.y = worldSize.y - starting.y;
-    jsSetGeyserInfo(RT_Starting, worldType, (size_t)&starting);
-    jsSetGeyserInfo(RT_WorldSize, seed, (size_t)&worldSize);
+    int worldType = (world->locationType == LocationType::StartWorld) ? 0 : 1;
+    jsExchangeData(RT_Starting, worldType, (size_t)&starting);
+    jsExchangeData(RT_WorldSize, seed, (size_t)&worldSize);
+}
+
+void App::SetResultTraits(const std::vector<const WorldTrait *> &traits)
+{
     std::vector<int> result;
+    result.reserve(traits.size());
     for (auto &item : traits) {
         uint32_t index = 0;
         for (auto &pair : m_settings.traits) {
@@ -218,16 +229,24 @@ void App::SetResult(int seed, int worldType, WorldGen &worldGen,
             }
         }
     }
-    jsSetGeyserInfo(RT_Trait, (uint32_t)result.size(), (size_t)result.data());
-    result.clear();
+    jsExchangeData(RT_Trait, (uint32_t)result.size(), (size_t)result.data());
+}
+
+void App::SetResultGeysers(int seed, const WorldGen &worldGen)
+{
     seed += (int)m_settings.cluster->worldPlacements.size() - 1;
     auto geysers = worldGen.GetGeysers(seed);
+    std::vector<int> result;
+    result.reserve(geysers.size() * 3);
     for (auto &item : geysers) {
-        result.insert(result.end(), {item.z, item.x, worldSize.y - item.y});
+        result.insert(result.end(), {item.z, item.x, item.y}); // z is type
     }
-    jsSetGeyserInfo(RT_Geyser, (uint32_t)result.size(), (size_t)result.data());
-    result.clear();
-    auto &sites = worldGen.GetSites();
+    jsExchangeData(RT_Geyser, (uint32_t)result.size(), (size_t)result.data());
+}
+
+void App::SetResultPolygons(World *world, std::vector<Site> &sites)
+{
+    std::vector<int> result;
     std::ranges::for_each(sites, [](Site &site) { site.visited = false; });
     for (auto &item : sites) {
         if (item.visited) {
@@ -240,10 +259,10 @@ void App::SetResult(int seed, int worldType, WorldGen &worldGen,
         result.push_back((int)polygon.Vertices.size());
         for (auto &vex : polygon.Vertices) {
             result.push_back(vex.x);
-            result.push_back(worldSize.y - vex.y);
+            result.push_back(world->worldsize.y - vex.y);
         }
     }
-    jsSetGeyserInfo(RT_Polygon, (uint32_t)result.size(), (size_t)result.data());
+    jsExchangeData(RT_Polygon, (uint32_t)result.size(), (size_t)result.data());
 }
 
 bool App::GetZonePolygon(Site &site, Polygon &polygon)
@@ -340,7 +359,7 @@ int main()
     return 0;
 }
 
-void jsSetGeyserInfo(uint32_t type, uint32_t count, size_t data)
+void jsExchangeData(uint32_t type, uint32_t count, size_t data)
 {
     const char *geysers[] = {
         "低温蒸汽喷孔", "蒸汽喷孔",     "清水泉",       "低温泥浆泉",
