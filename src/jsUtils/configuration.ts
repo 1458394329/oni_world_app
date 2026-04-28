@@ -5,6 +5,7 @@ interface Configuration {
     mixing: Array<Description>;
     traits: Array<Description>;
     geyser: Array<Description>;
+    geyserFilterGroups: Array<Description>;
 }
 
 const clusterNames = [
@@ -145,6 +146,9 @@ const configuration: Configuration = {
         { type: 0, key: "sender", name: "Supply Teleporter Input" },
         { type: 0, key: "teleporter", name: "Teleporter Transmitter" },
         { type: 0, key: "cryopod", name: "Cryotank 3000" },
+    ],
+    geyserFilterGroups: [
+        { type: 1000, key: "metal_volcano", name: "Any Metal Volcano" },
     ],
     traits: [
         { type: 0, key: "0", name: "No Traits" },

@@ -39,6 +39,22 @@ interface Description {
     name: string;
 }
 
+interface GeyserFilterRule {
+    index: number;
+    min: number;
+    max: number;
+}
+
+interface SearchFilters {
+    traitMask: number;
+    geysers: Array<GeyserFilterRule>;
+}
+
+interface SearchStatus {
+    exact: boolean;
+    attempts: number;
+}
+
 interface Geyser {
     index: number;
     pos: Point;
@@ -70,11 +86,21 @@ declare const Module: {
     data: Uint8Array | null;
     worlds: Array<World>;
     sprite: Array<ImageBitmap>;
+    searchStatus: SearchStatus;
     HEAP32: Int32Array;
     HEAPU8: Uint8Array;
     updateWorld(type: number, count: number, data: number): void;
     locateFile(path: string, prefix: string): string;
     onRuntimeInitialized(): void;
     app_init(seed: number): void;
-    app_generate(cluster: number, seed: number, mixing: number): boolean;
+    app_generate(
+        cluster: number,
+        seed: number,
+        mixing: number,
+        traitMask: number,
+        geyserCount: number,
+        geyserDataPtr: number
+    ): boolean;
+    malloc(size: number): number;
+    free(ptr: number): void;
 };

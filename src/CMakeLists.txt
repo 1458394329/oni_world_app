@@ -72,6 +72,7 @@ target_compile_options(oniWorldApp PUBLIC "-Wall" "-Wextra" "-Werror")
 target_link_options(oniWorldApp
     PUBLIC "-sALLOW_MEMORY_GROWTH" "-sINITIAL_HEAP=33554432"
     PUBLIC "-sMINIMAL_RUNTIME=1" "-sEXPORTED_RUNTIME_METHODS=[HEAP32,HEAPU8]"
+    PUBLIC "-sEXPORTED_FUNCTIONS=[_malloc,_free,_app_init,_app_generate]"
     PUBLIC "--pre-js" "${CMAKE_CURRENT_SOURCE_DIR}/jsUtils/prefix.js"
     PUBLIC "--js-library" "${CMAKE_CURRENT_SOURCE_DIR}/jsUtils/getresult.js"
 )

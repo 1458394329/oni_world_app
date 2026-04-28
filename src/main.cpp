@@ -9,6 +9,8 @@
 #endif
 
 #include <stack>
+#include <array>
+#include <climits>
 #include <ranges>
 #include <algorithm>
 
@@ -28,8 +30,41 @@ enum ResultType {
     RT_Geyser,
     RT_Polygon,
     RT_WorldSize,
-    RT_Resource
+    RT_Resource,
+    RT_SearchStatus
 };
+
+struct GeyserRule
+{
+    int geyserIndex;
+    int minCount;
+    int maxCount;
+};
+
+struct SearchFilter
+{
+    int traitMask = 0;
+    std::vector<GeyserRule> geyserRules;
+
+    bool Empty() const
+    {
+        return traitMask == 0 && geyserRules.empty();
+    }
+};
+
+struct SearchCandidate
+{
+    int seed = 0;
+    int traitMatches = -1;
+    int geyserDistance = INT_MAX;
+    int attempts = 0;
+    bool exact = false;
+    bool valid = false;
+};
+
+static constexpr int SEARCH_ATTEMPT_LIMIT = 1000;
+static constexpr int GEYSER_FILTER_METAL_VOLCANO = 1000;
+static constexpr int GEYSER_RESULT_COUNT = 32;
 
 // for debug
 void WriteToBinary(const std::vector<Site> &sites)
@@ -92,17 +127,87 @@ public:
         m_random = KRandom(seed);
     }
 
-    bool Generate(const std::string &code, int traits);
-    void SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag);
+    bool Generate(const std::string &code, const SearchFilter &filter);
+    void FindBestSeed(const std::vector<World *> &worlds, const SearchFilter &filter);
+    std::vector<const WorldTrait *> CollectRequestedTraits(int traitsFlag) const;
+    SearchCandidate EvaluateCandidate(const std::vector<World *> &worlds,
+                                      World &world, int worldIndex, int seed,
+                                      const SearchFilter &filter,
+                                      const std::vector<const WorldTrait *> &presets,
+                                      int attempts);
+    std::vector<int> CollectGeyserCounts(int seed, const WorldGen &worldGen) const;
     void SetResultWorldInfo(int seed, World *world, std::vector<Site> &sites);
     void SetResultTraits(const std::vector<const WorldTrait *> &traits);
     void SetResultGeysers(int seed, const WorldGen &worldGen);
     void SetResultPolygons(World *world, std::vector<Site> &sites);
+    void SetSearchStatus(bool exact, int attempts);
     // union sites with the same zone type. if result has hole return true.
     static bool GetZonePolygon(Site &site, Polygon &polygon);
 };
 
-bool App::Generate(const std::string &code, int traitsFlag)
+static World *GetStartWorld(const std::vector<World *> &worlds, int &index)
+{
+    index = 0;
+    World *world = worlds[index];
+    for (size_t i = 0; i < worlds.size(); ++i) {
+        world = worlds[i];
+        if (world->locationType == LocationType::StartWorld) {
+            index = (int)i;
+            return world;
+        }
+    }
+    return world;
+}
+
+static int GetRuleCount(const std::vector<int> &counts, int geyserIndex)
+{
+    if (geyserIndex == GEYSER_FILTER_METAL_VOLCANO) {
+        int total = 0;
+        const int metalVolcanoes[] = {16, 17, 18, 19, 20, 24, 25};
+        for (int index : metalVolcanoes) {
+            total += counts[index];
+        }
+        return total;
+    }
+    if (geyserIndex < 0 || geyserIndex >= (int)counts.size()) {
+        return 0;
+    }
+    return counts[geyserIndex];
+}
+
+static int GetGeyserDistance(const std::vector<int> &counts,
+                             const std::vector<GeyserRule> &rules)
+{
+    int distance = 0;
+    for (auto &rule : rules) {
+        int count = GetRuleCount(counts, rule.geyserIndex);
+        if (count < rule.minCount) {
+            distance += rule.minCount - count;
+        } else if (count > rule.maxCount) {
+            distance += count - rule.maxCount;
+        }
+    }
+    return distance;
+}
+
+static bool BetterCandidate(const SearchCandidate &lhs, const SearchCandidate &rhs)
+{
+    if (!rhs.valid) {
+        return lhs.valid;
+    }
+    if (!lhs.valid) {
+        return false;
+    }
+    if (lhs.traitMatches != rhs.traitMatches) {
+        return lhs.traitMatches > rhs.traitMatches;
+    }
+    if (lhs.geyserDistance != rhs.geyserDistance) {
+        return lhs.geyserDistance < rhs.geyserDistance;
+    }
+    return lhs.seed < rhs.seed;
+}
+
+bool App::Generate(const std::string &code, const SearchFilter &filter)
 {
     if (!m_settings.CoordinateChanged(code, m_settings)) {
         LogE("parse seed code %s failed.", code.c_str());
@@ -121,8 +226,9 @@ bool App::Generate(const std::string &code, int traitsFlag)
     if (worlds.size() == 1) {
         worlds[0]->locationType = LocationType::StartWorld;
     }
-    if (traitsFlag != 0) { // roll seed for preset traits
-        SetSeedWithTraits(worlds, traitsFlag);
+    SetSearchStatus(true, 0);
+    if (!filter.Empty()) {
+        FindBestSeed(worlds, filter);
     }
     m_settings.DoSubworldMixing(worlds);
     int seed = m_settings.seed;
@@ -157,7 +263,7 @@ bool App::Generate(const std::string &code, int traitsFlag)
     return true;
 }
 
-void App::SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag)
+std::vector<const WorldTrait *> App::CollectRequestedTraits(int traitsFlag) const
 {
     std::vector<const WorldTrait *> presets;
     int index = 0;
@@ -167,41 +273,100 @@ void App::SetSeedWithTraits(const std::vector<World *> &worlds, int traitsFlag)
         }
         ++index;
     }
-    if (presets.empty()) {
+    return presets;
+}
+
+std::vector<int> App::CollectGeyserCounts(int seed, const WorldGen &worldGen) const
+{
+    std::vector<int> counts(GEYSER_RESULT_COUNT, 0);
+    auto geysers =
+        worldGen.GetGeysers(seed + (int)m_settings.cluster->worldPlacements.size() - 1);
+    for (auto &item : geysers) {
+        if (item.z >= 0 && item.z < GEYSER_RESULT_COUNT) {
+            counts[item.z]++;
+        }
+    }
+    return counts;
+}
+
+SearchCandidate App::EvaluateCandidate(const std::vector<World *> &worlds,
+                                       World &world, int worldIndex, int seed,
+                                       const SearchFilter &filter,
+                                       const std::vector<const WorldTrait *> &presets,
+                                       int attempts)
+{
+    SearchCandidate candidate;
+    candidate.seed = seed;
+    candidate.attempts = attempts;
+    m_settings.seed = seed;
+    m_settings.DoSubworldMixing(worlds);
+    m_settings.seed = seed + worldIndex;
+    auto traits = m_settings.GetRandomTraits(world);
+    candidate.traitMatches = 0;
+    for (auto *preset : presets) {
+        if (std::ranges::contains(traits, preset)) {
+            candidate.traitMatches++;
+        }
+    }
+    if (filter.geyserRules.empty()) {
+        candidate.geyserDistance = 0;
+        candidate.exact = candidate.traitMatches == (int)presets.size();
+        candidate.valid = true;
+        return candidate;
+    }
+    for (auto trait : traits) {
+        world.ApplayTraits(*trait, m_settings);
+    }
+    WorldGen worldGen(world, m_settings);
+    std::vector<Site> sites;
+    if (!worldGen.GenerateOverworld(sites)) {
+        return candidate;
+    }
+    auto counts = CollectGeyserCounts(seed, worldGen);
+    candidate.geyserDistance = GetGeyserDistance(counts, filter.geyserRules);
+    candidate.exact = candidate.traitMatches == (int)presets.size() &&
+                      candidate.geyserDistance == 0;
+    candidate.valid = true;
+    return candidate;
+}
+
+void App::FindBestSeed(const std::vector<World *> &worlds, const SearchFilter &filter)
+{
+    auto presets = CollectRequestedTraits(filter.traitMask);
+    int worldIndex = 0;
+    World *world = GetStartWorld(worlds, worldIndex);
+    if (world == nullptr) {
         m_settings.seed = m_random.Next();
         return;
     }
-    index = 0;
-    World *world = worlds[index];
-    for (size_t i = 0; i < worlds.size(); ++i) {
-        world = worlds[i];
-        if (world->locationType == LocationType::StartWorld) {
-            index = i;
-            break;
+    SearchCandidate best;
+    for (int attempt = 0; attempt < SEARCH_ATTEMPT_LIMIT; ++attempt) {
+        if ((attempt + 1) % 10 == 0) {
+            LogI("search filters progress: %d/%d", attempt + 1,
+                 SEARCH_ATTEMPT_LIMIT);
         }
-    }
-    size_t maxCount = 0;
-    int maxCountSeed = 0;
-    for (int i = 0; i < 1000; ++i) {
         int seed = m_random.Next();
-        m_settings.seed = seed + index;
-        auto traits = m_settings.GetRandomTraits(*world);
-        m_settings.seed = seed;
-        size_t count = 0;
-        for (auto *preset : presets) {
-            if (std::ranges::contains(traits, preset)) {
-                ++count;
-            }
-        }
-        if (count == presets.size()) {
+        auto candidate = EvaluateCandidate(
+            worlds, *world, worldIndex, seed, filter, presets, attempt + 1);
+        if (candidate.exact) {
+            m_settings.seed = candidate.seed;
+            SetSearchStatus(true, candidate.attempts);
             return;
-        } else if (maxCount < count) {
-            maxCount = count;
-            maxCountSeed = seed;
+        }
+        if (BetterCandidate(candidate, best)) {
+            best = candidate;
         }
     }
-    m_settings.seed = maxCountSeed;
-    LogI("can not find seed for preset traits");
+    if (best.valid) {
+        m_settings.seed = best.seed;
+        SetSearchStatus(false, best.attempts);
+    } else {
+        m_settings.seed = m_random.Next();
+        SetSearchStatus(false, SEARCH_ATTEMPT_LIMIT);
+    }
+    if (!presets.empty()) {
+        LogI("can not find seed for preset traits");
+    }
 }
 
 void App::SetResultWorldInfo(int seed, World *world, std::vector<Site> &sites)
@@ -242,6 +407,11 @@ void App::SetResultGeysers(int seed, const WorldGen &worldGen)
         result.insert(result.end(), {item.z, item.x, item.y}); // z is type
     }
     jsExchangeData(RT_Geyser, (uint32_t)result.size(), (size_t)result.data());
+}
+
+void App::SetSearchStatus(bool exact, int attempts)
+{
+    jsExchangeData(RT_SearchStatus, exact ? 1 : 0, attempts);
 }
 
 void App::SetResultPolygons(World *world, std::vector<Site> &sites)
@@ -313,7 +483,9 @@ extern "C" void EMSCRIPTEN_KEEPALIVE app_init(int seed)
     App::Instance()->Initialize(seed);
 }
 
-extern "C" bool EMSCRIPTEN_KEEPALIVE app_generate(int type, int seed, int mix)
+extern "C" bool EMSCRIPTEN_KEEPALIVE
+app_generate(int type, int seed, int mix, int traitMask, int geyserCount,
+             size_t geyserDataPtr)
 {
     const char *worlds[] = {
         "SNDST-A-",  "OCAN-A-",    "S-FRZ-",     "LUSH-A-",    "FRST-A-",
@@ -328,16 +500,25 @@ extern "C" bool EMSCRIPTEN_KEEPALIVE app_generate(int type, int seed, int mix)
         return false;
     }
     std::string code = worlds[type];
-    int traits = 0;
-    if (seed < 0) {
-        traits = -seed;
-        seed = 0;
-    }
     code += std::to_string(seed);
     code += "-0-D3-";
     code += SettingsCache::BinaryToBase36(mix);
+    SearchFilter filter;
+    filter.traitMask = traitMask;
+    auto *data = (int *)geyserDataPtr;
+    for (int index = 0; index < geyserCount; ++index) {
+        int offset = index * 3;
+        int minCount = std::max(0, data[offset + 1]);
+        int maxCount = std::max(minCount, data[offset + 2]);
+        GeyserRule rule{
+            data[offset],
+            minCount,
+            maxCount,
+        };
+        filter.geyserRules.push_back(rule);
+    }
     LogI("generate with code: %s", code.c_str());
-    return App::Instance()->Generate(code, traits);
+    return App::Instance()->Generate(code, filter);
 }
 
 #ifndef __EMSCRIPTEN__
@@ -352,7 +533,7 @@ int main()
         if (seed == 0) {
             break;
         }
-        if (!app_generate(type, seed, mixing)) {
+        if (!app_generate(type, seed, mixing, 0, 0, 0)) {
             LogE("generate failed.");
         }
     }
@@ -421,6 +602,10 @@ void jsExchangeData(uint32_t type, uint32_t count, size_t data)
         }
         break;
     }
+    case RT_SearchStatus:
+        LogI("search status: %s, attempts: %d",
+             count == 0 ? "closest" : "exact", (int)data);
+        break;
     }
 }
 

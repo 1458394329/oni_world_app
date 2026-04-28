@@ -1,6 +1,8 @@
 import React from "react";
 import { useState } from "react";
 import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
+import Stack from "react-bootstrap/Stack";
 
 import configuration from "./configuration";
 import useTranslation from "./language";
@@ -10,7 +12,13 @@ interface SettingsProps {
     cluster: Cluster;
     mixings: number;
     traits: string;
-    onChange: (cluster: number, mixings: number, traits: string) => void;
+    geyserFilters: Array<GeyserFilterRule>;
+    onChange: (
+        cluster: number,
+        mixings: number,
+        traits: string,
+        geyserFilters: Array<GeyserFilterRule>
+    ) => void;
 }
 
 interface TraitItemProps {
@@ -39,7 +47,21 @@ const TraitItem = ({ options, value, onChange }: TraitItemProps) => {
     );
 };
 
-const Settings = ({ cluster, mixings, traits, onChange }: SettingsProps) => {
+const geyserOptions = [
+    ...configuration.geyser.map((item, index) => ({ index, ...item })),
+    ...configuration.geyserFilterGroups.map((item) => ({
+        index: item.type,
+        ...item,
+    })),
+];
+
+const Settings = ({
+    cluster,
+    mixings,
+    traits,
+    geyserFilters,
+    onChange,
+}: SettingsProps) => {
     const getTraits = (index: number) => {
         const cluster = configuration.cluster[index];
         return Array<string>(cluster.max).fill(cluster.traits);
@@ -73,24 +95,67 @@ const Settings = ({ cluster, mixings, traits, onChange }: SettingsProps) => {
     const initOptions = fillTraitOptions(traits.split(""));
     const [traitOptions, setTraitOptions] = useState(initOptions);
     const translation = useTranslation();
+    const updateSettings = (
+        nextCluster: number,
+        nextMixings: number,
+        nextTraits: string,
+        nextGeyserFilters: Array<GeyserFilterRule>
+    ) => {
+        onChange(nextCluster, nextMixings, nextTraits, nextGeyserFilters);
+    };
     const onCategoryChange = (value: number) => {
         const cluster = value === 0 ? 0 : value === 1 ? 13 : 27;
         setTraitOptions(getTraits(cluster));
-        onChange(cluster, mixings, "ZZZZ");
+        updateSettings(cluster, mixings, "ZZZZ", geyserFilters);
     };
     const onClusterChange = (value: number) => {
         setTraitOptions(getTraits(value));
-        onChange(value, mixings, "ZZZZ");
+        updateSettings(value, mixings, "ZZZZ", geyserFilters);
     };
     const onMixingsChange = (value: number) => {
-        onChange(cluster.index, value, traits);
+        updateSettings(cluster.index, value, traits, geyserFilters);
     };
     const onTraitsChange = (enable: string, index: number) => {
         const traitsArray = traits.split("");
         traitsArray[index] = enable;
         const options = fillTraitOptions(traitsArray);
         setTraitOptions(options);
-        onChange(cluster.index, mixings, traitsArray.join(""));
+        updateSettings(
+            cluster.index,
+            mixings,
+            traitsArray.join(""),
+            geyserFilters
+        );
+    };
+    const onAddGeyserFilter = () => {
+        updateSettings(cluster.index, mixings, traits, [
+            ...geyserFilters,
+            { index: geyserOptions[0].index, min: 0, max: 99 },
+        ]);
+    };
+    const onRemoveGeyserFilter = (index: number) => {
+        updateSettings(
+            cluster.index,
+            mixings,
+            traits,
+            geyserFilters.filter((_, itemIndex) => itemIndex !== index)
+        );
+    };
+    const onGeyserFilterChange = (
+        index: number,
+        patch: Partial<GeyserFilterRule>
+    ) => {
+        const nextFilters = geyserFilters.map((item, itemIndex) => {
+            if (itemIndex !== index) {
+                return item;
+            }
+            const nextItem = { ...item, ...patch };
+            if (nextItem.max < nextItem.min) {
+                nextItem.max = nextItem.min;
+            }
+            return nextItem;
+        });
+        updateSettings(cluster.index, mixings, traits, nextFilters);
     };
     const labels = ["Asteroid", "Planetoid Cluster", "Moonlet Cluster"];
     return (
@@ -139,6 +204,100 @@ const Settings = ({ cluster, mixings, traits, onChange }: SettingsProps) => {
                         onChange={(value) => onTraitsChange(value, index)}
                     />
                 ))}
+            </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label>{translation("Geyser Filters")}</Form.Label>
+                <Stack gap={2}>
+                    {geyserFilters.length === 0 && (
+                        <div>{translation("No geyser filters")}</div>
+                    )}
+                    {geyserFilters.map((item, index) => (
+                        <Stack
+                            key={index}
+                            gap={2}
+                            className="border rounded p-2"
+                        >
+                            <Form.Group>
+                                <Form.Label>{translation("Target")}</Form.Label>
+                                <Form.Select
+                                    value={item.index}
+                                    onChange={(e) =>
+                                        onGeyserFilterChange(index, {
+                                            index: parseInt(e.target.value),
+                                        })
+                                    }
+                                >
+                                    {geyserOptions.map((option) => (
+                                        <option
+                                            key={option.index}
+                                            value={option.index}
+                                        >
+                                            {translation(option.name)}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                            <Stack direction="horizontal" gap={2}>
+                                <Form.Group className="w-100">
+                                    <Form.Label>
+                                        {translation("Minimum")}
+                                    </Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        min={0}
+                                        value={item.min}
+                                        onChange={(e) =>
+                                            onGeyserFilterChange(index, {
+                                                min: Math.max(
+                                                    0,
+                                                    parseInt(e.target.value) ||
+                                                        0
+                                                ),
+                                            })
+                                        }
+                                    />
+                                </Form.Group>
+                                <Form.Group className="w-100">
+                                    <Form.Label>
+                                        {translation("Maximum")}
+                                    </Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        min={item.min}
+                                        value={item.max}
+                                        onChange={(e) =>
+                                            onGeyserFilterChange(index, {
+                                                max: Math.max(
+                                                    0,
+                                                    parseInt(e.target.value) ||
+                                                        0
+                                                ),
+                                            })
+                                        }
+                                    />
+                                </Form.Group>
+                            </Stack>
+                            <div>
+                                <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => onRemoveGeyserFilter(index)}
+                                >
+                                    {translation("Remove")}
+                                </Button>
+                            </div>
+                        </Stack>
+                    ))}
+                    <div>
+                        <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={onAddGeyserFilter}
+                        >
+                            {translation("Add Filter")}
+                        </Button>
+                    </div>
+                </Stack>
             </Form.Group>
             <Form.Group className="mb-3">
                 <Form.Label>{translation("Scramble DLCs")}</Form.Label>

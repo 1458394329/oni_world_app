@@ -8,6 +8,7 @@ const enum ResultType {
     RT_Polygon,
     RT_WorldSize,
     RT_Resource,
+    RT_SearchStatus,
 }
 
 export const updateWorld = (type: number, count: number, data: number) => {
@@ -87,6 +88,12 @@ export const updateWorld = (type: number, count: number, data: number) => {
             if (Module.data!.length === count) {
                 Module.HEAPU8.set(Module.data!, data);
             } else console.log("resource file size was wrong.");
+            break;
+        case ResultType.RT_SearchStatus:
+            Module.searchStatus = {
+                exact: count !== 0,
+                attempts: data,
+            };
             break;
         default:
             console.log("wrong type: " + type);

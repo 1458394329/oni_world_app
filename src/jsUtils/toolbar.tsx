@@ -19,9 +19,13 @@ interface ToolBarProps {
 
 const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
     const hexChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const searchStatus = Module.searchStatus || { exact: true, attempts: 0 };
     const [drawer, setDrawer] = useState(true);
     const [cluster, setCluster] = useState(0);
     const [traits, setTraits] = useState("ZZZZ");
+    const [geyserFilters, setGeyserFilters] = useState<Array<GeyserFilterRule>>(
+        []
+    );
     const [mixings, setMixings] = useState(9769375);
     const [seed, setSeed] = useState("");
     const translation = useTranslation();
@@ -41,11 +45,48 @@ const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
                 num |= 1 << (hexChars.indexOf(item) - 1);
             }
         });
-        return -num;
+        return num;
+    };
+    const hasSearchFilters = () => {
+        return traitsToNumber() !== 0 || geyserFilters.length > 0;
+    };
+    const allocateGeyserFilters = () => {
+        if (geyserFilters.length === 0) {
+            return 0;
+        }
+        const data = new Int32Array(geyserFilters.length * 3);
+        geyserFilters.forEach((item, index) => {
+            const offset = index * 3;
+            data[offset] = item.index;
+            data[offset + 1] = item.min;
+            data[offset + 2] = item.max;
+        });
+        const ptr = Module.malloc(data.byteLength);
+        Module.HEAP32.set(data, ptr >> 2);
+        return ptr;
     };
     const generateWorld = (nseed: number) => {
         Module.worlds.length = 0;
-        Module.app_generate(cluster, nseed, mixings);
+        const traitMask = traitsToNumber();
+        const geyserDataPtr = allocateGeyserFilters();
+        let success = false;
+        try {
+            success = Module.app_generate(
+                cluster,
+                nseed,
+                mixings,
+                traitMask,
+                geyserFilters.length,
+                geyserDataPtr
+            );
+        } finally {
+            if (geyserDataPtr !== 0) {
+                Module.free(geyserDataPtr);
+            }
+        }
+        if (!success || Module.worlds.length === 0) {
+            return;
+        }
         setSeed(Module.worlds[0].seed.toString());
         Module.worlds.forEach(
             (item) => (item.coord = getSeedString(item.seed))
@@ -63,8 +104,8 @@ const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
         } catch (err) {}
     };
     const onReroll = () => {
-        let nseed = traitsToNumber();
-        if (nseed === 0) {
+        let nseed = 0;
+        if (!hasSearchFilters()) {
             nseed = Math.round(Math.random() * 0x7fffffff);
         }
         generateWorld(nseed);
@@ -72,8 +113,8 @@ const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
     const onCopy = () => copyToClipboard(getSeedString(seed));
     const onSubmit = () => {
         setDrawer(false);
-        let nseed = traitsToNumber();
-        if (nseed === 0) {
+        let nseed = 0;
+        if (!hasSearchFilters()) {
             if (seed.length === 0) {
                 nseed = Math.round(Math.random() * 0x7fffffff);
             } else {
@@ -107,6 +148,15 @@ const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
                     {translation("Copy")}
                 </Button>
             </InputGroup>
+            {searchStatus.attempts > 0 && (
+                <div className="mt-2 small text-body-secondary">
+                    {searchStatus.exact
+                        ? translation("Matched all filters.")
+                        : translation("Returned closest match after search.")}
+                    {" "}- {translation("Search attempts")}:{" "}
+                    {searchStatus.attempts}
+                </div>
+            )}
             <Offcanvas show={drawer} onHide={onSubmit}>
                 <Navbar className="justify-content-between">
                     <Container>
@@ -125,10 +175,12 @@ const ToolBar = ({ onSetAppConfig, onSetWorld }: ToolBarProps) => {
                         cluster={configuration.cluster[cluster]}
                         mixings={mixings}
                         traits={traits}
-                        onChange={(cluster, mixings, traits) => {
+                        geyserFilters={geyserFilters}
+                        onChange={(cluster, mixings, traits, geyserFilters) => {
                             setCluster(cluster);
                             setTraits(traits);
                             setMixings(mixings);
+                            setGeyserFilters(geyserFilters);
                         }}
                     />
                 </Offcanvas.Body>
