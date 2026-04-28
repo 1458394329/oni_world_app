@@ -151,7 +151,9 @@ const App = ({ onSetLanguage, onSetTheme }: AppProps) => {
             return response.arrayBuffer();
         };
         (process.env.NODE_ENV === "development"
+            // @ts-ignore
             ? import("../out/build/wasm-debug/src/WasmFiles")
+            // @ts-ignore
             : import("../out/build/wasm-release/src/WasmFiles")
         ).then((module) => {
             Promise.all([
